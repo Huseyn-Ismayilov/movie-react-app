@@ -6,6 +6,8 @@ import { ClipLoader } from 'react-spinners';
 export default function MoviesList({ searchResults }) {
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(false);
+    const [searchTerm, setSearchTerm] = useState('');
+
     const override = {
         display: "block",
         margin: "auto",
@@ -15,39 +17,47 @@ export default function MoviesList({ searchResults }) {
     const fetchMovies = async (searchQuery) => {
         setLoading(true);
         try {
-            const response = await axios.get(`https://imdb-top-100-movies.p.rapidapi.com?search=${searchQuery}`, {
+            const response = await axios.get(`https://imdb-top-100-movies.p.rapidapi.com`, {
                 headers: {
-                    'X-RapidAPI-Key': '931428392bmsh4d5e32447f6f4aep150cb9jsn21d67d7042ec',
+                    'X-RapidAPI-Key': 'aea0e43a78msh0eb9e096b145f77p1669fajsn9f23d5ad176f',
                     'X-RapidAPI-Host': 'imdb-top-100-movies.p.rapidapi.com'
+                },
+                params: {
+                    title: searchQuery
                 }
             });
             setLoading(false);
             return response.data;
         } catch (error) {
             setLoading(false);
-            console.error('Hata:', error);
+            console.error('error:', error);
             return null;
         }
     };
 
+
     useEffect(() => {
         const getMovies = async () => {
-            if (searchResults) {
-                const movies = await fetchMovies(searchResults);
-                if (movies) {
-                    setData(movies)
+            if (!searchResults) { 
+                setSearchTerm('');
+                const allMovies = await fetchMovies(''); 
+                if (allMovies) {
+                    setData(allMovies);
                 }
             } else {
-                // Eğer searchResults boşsa, tüm filmleri getir
-                const allMovies = await fetchMovies('');
-                if (allMovies) {
-                    setData(allMovies)
+                setSearchTerm(searchResults);
+                const movies = await fetchMovies(searchResults);
+                if (movies) {
+                    setData(movies);
                 }
             }
         };
 
         getMovies();
     }, [searchResults]);
+    const filteredMovies = data && data.filter(movie =>
+        movie.title.toLowerCase().includes(searchTerm.toLowerCase())
+    );
 
     return (
         <div>
@@ -60,7 +70,7 @@ export default function MoviesList({ searchResults }) {
                 />
             ) : (
                 <ul className='movies_list'>
-                    {data && data.map((item, index) => (
+                    {filteredMovies && filteredMovies.map((item, index) => (
                         <MovieCard
                             key={index}
                             image={item.image}
